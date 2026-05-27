@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cody Lang — Pitch Tracker</title>
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --card: #16181c;
+      --border: #2a2d35;
+      --accent: #6c63ff;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      padding: 32px 20px;
+    }
+    header {
+      max-width: 960px;
+      margin: 0 auto 32px;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.9rem; }
+
+    .stats {
+      max-width: 960px;
+      margin: 0 auto 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .stat-card .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; margin-top: 6px; }
+    .stat-card .value.green { color: var(--green); }
+    .stat-card .value.yellow { color: var(--yellow); }
+    .stat-card .value.blue { color: var(--blue); }
+    .stat-card .value.muted { color: var(--muted); }
+
+    .controls {
+      max-width: 960px;
+      margin: 0 auto 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .controls input, .controls select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      outline: none;
+    }
+    .controls input:focus, .controls select:focus { border-color: var(--accent); }
+    .controls input { flex: 1; min-width: 200px; }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn.secondary { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+
+    .table-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      background: #1a1d24;
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.12s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #1e2028; }
+    tbody td { padding: 14px 16px; font-size: 0.88rem; vertical-align: middle; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.sent     { background: #1e2a3a; color: var(--blue); }
+    .badge.opened   { background: #2a2500; color: var(--yellow); }
+    .badge.replied  { background: #0f2a1a; color: var(--green); }
+    .badge.no-reply { background: #2a1a1a; color: var(--red); }
+
+    .site-link { color: var(--accent); text-decoration: none; font-size: 0.82rem; }
+    .site-link:hover { text-decoration: underline; }
+    .email-cell { color: var(--muted); font-size: 0.82rem; }
+    .date-cell { color: var(--muted); font-size: 0.8rem; }
+    .biz-name { font-weight: 600; font-size: 0.9rem; }
+
+    .action-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+    }
+    .modal h2 { font-size: 1.1rem; margin-bottom: 18px; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; color: var(--muted); font-size: 0.8rem; margin-bottom: 5px; }
+    .form-row input, .form-row select, .form-row textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 13px;
+      font-size: 0.88rem;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-row textarea { resize: vertical; min-height: 80px; }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📬 Pitch Tracker</h1>
+  <p>Cody Lang cold email pipeline — sent, opened, replied</p>
+</header>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Total Sent</div>
+    <div class="value blue" id="stat-total">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Opened</div>
+    <div class="value yellow" id="stat-opened">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Replied</div>
+    <div class="value green" id="stat-replied">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">No Reply</div>
+    <div class="value muted" id="stat-noreply">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Reply Rate</div>
+    <div class="value green" id="stat-rate">0%</div>
+  </div>
+</div>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="Search business, email, site…" oninput="render()" />
+  <select id="filter-status" onchange="render()">
+    <option value="">All Statuses</option>
+    <option value="sent">Sent</option>
+    <option value="opened">Opened</option>
+    <option value="replied">Replied</option>
+    <option value="no-reply">No Reply</option>
+  </select>
+  <button class="btn" onclick="openAddModal()">+ Add Entry</button>
+  <button class="btn secondary" onclick="exportCSV()">Export CSV</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Business</th>
+        <th>Email Sent To</th>
+        <th>Site</th>
+        <th>Date Sent</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="icon">📭</div>
+    <div>No pitches found. Add your first one above.</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <h2 id="modal-title">Add Pitch</h2>
+    <div class="form-row">
+      <label>Business Name</label>
+      <input type="text" id="f-name" placeholder="Burris Construction & Remodel" />
+    </div>
+    <div class="form-row">
+      <label>Email Sent To</label>
+      <input type="email" id="f-email" placeholder="owner@business.com" />
+    </div>
+    <div class="form-row">
+      <label>Site URL</label>
+      <input type="text" id="f-site" placeholder="https://burris-construction.vercel.app" />
+    </div>
+    <div class="form-row">
+      <label>Date Sent</label>
+      <input type="date" id="f-date" />
+    </div>
+    <div class="form-row">
+      <label>Status</label>
+      <select id="f-status">
+        <option value="sent">Sent</option>
+        <option value="opened">Opened</option>
+        <option value="replied">Replied</option>
+        <option value="no-reply">No Reply</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Notes / Reply Snippet</label>
+      <textarea id="f-notes" placeholder="Any response or follow-up notes…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'pitch_tracker_v1';
+let entries = [];
+let editId = null;
+
+const DEFAULT_ENTRIES = [
+  {
+    id: '1',
+    name: 'Burris Construction & Remodel',
+    email: 'Burriscons@yahoo.com',
+    site: 'https://burris-construction.vercel.app',
+    date: '2026-05-27',
+    status: 'sent',
+    notes: ''
+  },
+  {
+    id: '2',
+    name: 'Unique Auto Detailing',
+    email: 'angels_detailing@yahoo.com',
+    site: 'https://unique-auto-detail.vercel.app',
+    date: '2026-05-27',
+    status: 'sent',
+    notes: ''
+  },
+  {
+    id: '3',
+    name: "Gypsy's Mobile Dog Grooming",
+    email: 'agypsygroomer@gmail.com',
+    site: 'https://gypsys-grooming.vercel.app',
+    date: '2026-05-27',
+    status: 'sent',
+    notes: ''
+  },
+  {
+    id: '4',
+    name: 'Level Handyman',
+    email: '',
+    site: '',
+    date: '2026-05-25',
+    status: 'sent',
+    notes: 'Earlier pitch'
+  }
+];
+
+function load() {
+  const raw = localStorage.getItem(STORE_KEY);
+  if (raw) {
+    entries = JSON.parse(raw);
+  } else {
+    entries = DEFAULT_ENTRIES;
+    save();
+  }
+}
+
+function save() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(entries));
+}
+
+function updateStats() {
+  const total = entries.length;
+  const opened = entries.filter(e => e.status === 'opened').length;
+  const replied = entries.filter(e => e.status === 'replied').length;
+  const noreply = entries.filter(e => e.status === 'no-reply').length;
+  const rate = total ? Math.round((replied / total) * 100) : 0;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-opened').textContent = opened;
+  document.getElementById('stat-replied').textContent = replied;
+  document.getElementById('stat-noreply').textContent = noreply;
+  document.getElementById('stat-rate').textContent = rate + '%';
+}
+
+function badgeHTML(status) {
+  const labels = { sent: '📤 Sent', opened: '👀 Opened', replied: '💬 Replied', 'no-reply': '🔇 No Reply' };
+  return `<span class="badge ${status}">${labels[status] || status}</span>`;
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const statusFilter = document.getElementById('filter-status').value;
+
+  let filtered = entries.filter(e => {
+    const matchQ = !q || e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || e.site.toLowerCase().includes(q);
+    const matchS = !statusFilter || e.status === statusFilter;
+    return matchQ && matchS;
+  });
+
+  const tbody = document.getElementById('table-body');
+  const empty = document.getElementById('empty-state');
+
+  if (!filtered.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    updateStats();
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(e => `
+    <tr>
+      <td><div class="biz-name">${esc(e.name)}</div></td>
+      <td><div class="email-cell">${esc(e.email) || '<span style="color:#555">—</span>'}</div></td>
+      <td>${e.site ? `<a class="site-link" href="${esc(e.site)}" target="_blank">${e.site.replace('https://','')}</a>` : '<span style="color:#555">—</span>'}</td>
+      <td><div class="date-cell">${formatDate(e.date)}</div></td>
+      <td>${badgeHTML(e.status)}</td>
+      <td><div class="email-cell" title="${esc(e.notes)}">${e.notes ? truncate(e.notes, 40) : '—'}</div></td>
+      <td>
+        <button class="action-btn" onclick="editEntry('${e.id}')">Edit</button>
+        <button class="action-btn" onclick="deleteEntry('${e.id}')" style="margin-left:4px">✕</button>
+      </td>
+    </tr>
+  `).join('');
+
+  updateStats();
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function truncate(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+function formatDate(d) {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m)-1]} ${parseInt(day)}, ${y}`;
+}
+
+function openAddModal() {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'Add Pitch';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-email').value = '';
+  document.getElementById('f-site').value = '';
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-status').value = 'sent';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function editEntry(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  editId = id;
+  document.getElementById('modal-title').textContent = 'Edit Pitch';
+  document.getElementById('f-name').value = e.name;
+  document.getElementById('f-email').value = e.email;
+  document.getElementById('f-site').value = e.site;
+  document.getElementById('f-date').value = e.date;
+  document.getElementById('f-status').value = e.status;
+  document.getElementById('f-notes').value = e.notes;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  entries = entries.filter(e => e.id !== id);
+  save(); render();
+}
+
+function saveEntry() {
+  const data = {
+    id: editId || String(Date.now()),
+    name: document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    site: document.getElementById('f-site').value.trim(),
+    date: document.getElementById('f-date').value,
+    status: document.getElementById('f-status').value,
+    notes: document.getElementById('f-notes').value.trim(),
+  };
+  if (!data.name) { alert('Business name required'); return; }
+
+  if (editId) {
+    entries = entries.map(e => e.id === editId ? data : e);
+  } else {
+    entries.push(data);
+  }
+  save(); closeModal(); render();
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOnOverlay(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function exportCSV() {
+  const header = ['Business','Email','Site','Date Sent','Status','Notes'];
+  const rows = entries.map(e => [e.name, e.email, e.site, e.date, e.status, e.notes].map(v => `"${String(v).replace(/"/g,'""')}"`));
+  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pitch-tracker.csv';
+  a.click();
+}
+
+load(); render();
+</script>
+</body>
+</html>
